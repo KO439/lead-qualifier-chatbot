@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NODE. — Matériel tech, sans détour</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #0F1225;
+    --bg-panel: #171B33;
+    --paper: #F5F3EC;
+    --accent-electric: #4C6FFF;
+    --accent-signal: #FFB238;
+    --text-light: #EDEFF7;
+    --text-dim: #9096B8;
+    --text-dark: #1B1E2E;
+    --ok-green: #3DDC97;
+    --warn: #FFB238;
+    --cold: #6B7099;
+    --radius: 10px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--paper);
+    color: var(--text-dark);
+    line-height: 1.5;
+  }
+
+  a { color: inherit; }
+
+  /* ---------- NAV ---------- */
+  nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 48px;
+    background: var(--bg-deep);
+    color: var(--text-light);
+  }
+  .logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--accent-signal); }
+  .nav-links { display: flex; gap: 32px; font-size: 14px; color: var(--text-dim); }
+
+  /* ---------- HERO ---------- */
+  .hero {
+    background: var(--bg-deep);
+    color: var(--text-light);
+    padding: 90px 48px 110px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::after {
+    content: "";
+    position: absolute;
+    top: -40%; right: -10%;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(76,111,255,0.25) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--accent-signal);
+    letter-spacing: 0.08em;
+    margin-bottom: 20px;
+  }
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(38px, 6vw, 64px);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    max-width: 780px;
+    line-height: 1.05;
+  }
+  .hero p {
+    margin-top: 22px;
+    max-width: 520px;
+    color: var(--text-dim);
+    font-size: 17px;
+  }
+  .cta {
+    display: inline-block;
+    margin-top: 36px;
+    padding: 14px 28px;
+    background: var(--accent-electric);
+    color: white;
+    border-radius: var(--radius);
+    font-weight: 600;
+    font-size: 15px;
+    text-decoration: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .cta:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(76,111,255,0.4); }
+
+  /* ---------- PRODUCTS ---------- */
+  .catalog { padding: 80px 48px; max-width: 1200px; margin: 0 auto; }
+  .catalog-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 40px;
+    border-bottom: 2px solid var(--text-dark);
+    padding-bottom: 16px;
+  }
+  .catalog-head h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 28px;
+    font-weight: 600;
+  }
+  .catalog-head span {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--text-dark);
+    opacity: 0.55;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 24px;
+  }
+  .card {
+    background: white;
+    border: 1px solid rgba(27,30,46,0.1);
+    border-radius: var(--radius);
+    padding: 24px;
+    transition: border-color 0.15s ease;
+  }
+  .card:hover { border-color: var(--accent-electric); }
+  .card-cat {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent-electric);
+    margin-bottom: 10px;
+  }
+  .card h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 17px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .card p {
+    font-size: 13.5px;
+    color: var(--text-dark);
+    opacity: 0.65;
+    margin-bottom: 18px;
+  }
+  .price {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    font-size: 18px;
+  }
+
+  footer {
+    background: var(--bg-deep);
+    color: var(--text-dim);
+    padding: 32px 48px;
+    font-size: 13px;
+    text-align: center;
+  }
+
+  /* ---------- CHAT WIDGET ---------- */
+  #chat-toggle {
+    position: fixed;
+    bottom: 28px; right: 28px;
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    background: var(--accent-electric);
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 10px 30px rgba(76,111,255,0.45);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 999;
+    transition: transform 0.15s ease;
+  }
+  #chat-toggle:hover { transform: scale(1.06); }
+  #chat-toggle svg { width: 26px; height: 26px; }
+
+  #chat-panel {
+    position: fixed;
+    bottom: 104px; right: 28px;
+    width: 380px;
+    max-width: calc(100vw - 40px);
+    height: 560px;
+    max-height: calc(100vh - 140px);
+    background: var(--bg-panel);
+    border-radius: 14px;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.35);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 999;
+    font-family: 'Inter', sans-serif;
+  }
+  #chat-panel.open { display: flex; }
+
+  .chat-header {
+    background: #10132A;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .dots { display: flex; gap: 6px; }
+  .dots span { width: 9px; height: 9px; border-radius: 50%; }
+  .dots span:nth-child(1) { background: #FF5F57; }
+  .dots span:nth-child(2) { background: #FEBC2E; }
+  .dots span:nth-child(3) { background: #28C840; }
+  .chat-header-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    color: var(--text-dim);
+    margin-left: 4px;
+  }
+  .chat-header-title b { color: var(--text-light); }
+
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .msg {
+    max-width: 84%;
+    padding: 11px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.45;
+  }
+  .msg.bot {
+    background: #1F2444;
+    color: var(--text-light);
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+  }
+  .msg.user {
+    background: var(--accent-electric);
+    color: white;
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+  }
+  .msg.typing { color: var(--text-dim); font-style: italic; font-size: 13px; }
+
+  .chat-score {
+    padding: 12px 18px 14px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    background: #10132A;
+  }
+  .score-row {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 7px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .score-row b { color: var(--text-light); }
+  .score-bar-track {
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.08);
+    overflow: hidden;
+  }
+  .score-bar-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 3px;
+    background: var(--cold);
+    transition: width 0.5s ease, background 0.5s ease;
+  }
+
+  .chat-input-row {
+    display: flex;
+    gap: 8px;
+    padding: 14px;
+    background: var(--bg-panel);
+  }
+  .chat-input-row input {
+    flex: 1;
+    background: #10132A;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 11px 14px;
+    color: var(--text-light);
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+  }
+  .chat-input-row input:focus { outline: none; border-color: var(--accent-electric); }
+  .chat-input-row button {
+    background: var(--accent-electric);
+    border: none;
+    color: white;
+    width: 42px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .chat-input-row button:disabled { opacity: 0.5; cursor: default; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">NODE<span>.</span></div>
+  <div class="nav-links">
+    <a href="#catalog">Catalogue</a>
+    <a href="#">Support</a>
+    <a href="#">Compte</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="eyebrow">// DÉMO — CHATBOT IA DE QUALIFICATION DE LEADS</div>
+  <h1>Composez votre setup,<br>sans perdre de temps.</h1>
+  <p>Ordinateurs, smartphones et accessoires sélectionnés pour durer. Une question ? L'assistante en bas à droite connaît le catalogue mieux que personne.</p>
+  <a href="#catalog" class="cta">Voir le catalogue</a>
+</section>
+
+<section class="catalog" id="catalog">
+  <div class="catalog-head">
+    <h2>Catalogue</h2>
+    <span>10 RÉFÉRENCES EN STOCK</span>
+  </div>
+  <div class="grid" id="product-grid"></div>
+</section>
+
+<footer>Projet de stage — Chatbot IA de qualification de leads · démo interne, non connectée à un vrai stock</footer>
+
+<!-- ============ CHAT WIDGET ============ -->
+<button id="chat-toggle" aria-label="Ouvrir le chat">
+  <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+  </svg>
+</button>
+
+<div id="chat-panel">
+  <div class="chat-header">
+    <div class="dots"><span></span><span></span><span></span></div>
+    <div class="chat-header-title"><b>Léa</b> · assistante IA — node/lead-qualifier</div>
+  </div>
+  <div class="chat-messages" id="chat-messages">
+    <div class="msg bot">Bonjour 👋 Je suis Léa. Dites-moi ce que vous cherchez, je vous aide à trouver le bon produit.</div>
+  </div>
+  <div class="chat-score">
+    <div class="score-row"><span>Qualification du lead</span><b id="score-label">0/100 · —</b></div>
+    <div class="score-bar-track"><div class="score-bar-fill" id="score-bar"></div></div>
+  </div>
+  <div class="chat-input-row">
+    <input type="text" id="chat-input" placeholder="Écrivez votre message…" autocomplete="off">
+    <button id="chat-send" aria-label="Envoyer">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<script>
+  // ---- Adresse de l'API backend (FastAPI). Modifiez si vous déployez ailleurs. ----
+  const API_URL = "http://127.0.0.1:8000";
+
+  // ---- Catalogue affiché sur la page (miroir du fichier data/products_catalog.json) ----
+  const products = [
+    { nom: "Laptop Acer Aspire 3", cat: "Ordinateur portable", prix: 349, desc: "Léger, 8Go RAM, 256Go SSD. Études et bureautique." },
+    { nom: "Laptop Dell Inspiron 15", cat: "Ordinateur portable", prix: 649, desc: "Core i5, 16Go RAM, 512Go SSD. Travail et loisirs." },
+    { nom: "MacBook Air M2", cat: "Ordinateur portable", prix: 1299, desc: "Puce M2, très léger, autonomie excellente." },
+    { nom: "Samsung Galaxy A54", cat: "Smartphone", prix: 399, desc: "AMOLED 6.4\", bon appareil photo, 2 jours d'autonomie." },
+    { nom: "iPhone 15", cat: "Smartphone", prix: 969, desc: "Appareil photo pro, écosystème Apple." },
+    { nom: "JBL Tune 230NC", cat: "Audio", prix: 79, desc: "Réduction de bruit active, 40h d'autonomie." },
+    { nom: "Sony WH-1000XM5", cat: "Audio", prix: 349, desc: "Meilleure réduction de bruit du marché." },
+    { nom: "Logitech MX Master 3", cat: "Accessoire", prix: 99, desc: "Souris ergonomique haut de gamme." },
+    { nom: "ASUS 24\" Full HD", cat: "Accessoire", prix: 129, desc: "Écran IPS, bureautique et usage quotidien." },
+    { nom: "Galaxy Tab A9", cat: "Tablette", prix: 219, desc: "Légère, lecture, streaming, usage familial." },
+  ];
+
+  const grid = document.getElementById("product-grid");
+  grid.innerHTML = products.map(p => `
+    <div class="card">
+      <div class="card-cat">${p.cat}</div>
+      <h3>${p.nom}</h3>
+      <p>${p.desc}</p>
+      <div class="price">${p.prix} €</div>
+    </div>
+  `).join("");
+
+  // ---- Widget de chat ----
+  const toggle = document.getElementById("chat-toggle");
+  const panel = document.getElementById("chat-panel");
+  const messagesEl = document.getElementById("chat-messages");
+  const input = document.getElementById("chat-input");
+  const sendBtn = document.getElementById("chat-send");
+  const scoreLabel = document.getElementById("score-label");
+  const scoreBar = document.getElementById("score-bar");
+
+  const sessionId = "web-" + Math.random().toString(36).slice(2, 11);
+
+  toggle.addEventListener("click", () => {
+    panel.classList.toggle("open");
+    if (panel.classList.contains("open")) input.focus();
+  });
+
+  function addMessage(text, role) {
+    const div = document.createElement("div");
+    div.className = "msg " + role;
+    div.textContent = text;
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return div;
+  }
+
+  function setScore(score, category) {
+    scoreBar.style.width = score + "%";
+    const colors = { chaud: "#3DDC97", tiede: "#FFB238", froid: "#6B7099" };
+    scoreBar.style.background = colors[category] || "#6B7099";
+    scoreLabel.textContent = `${score}/100 · ${category || "—"}`;
+  }
+
+  async function sendMessage() {
+    const text = input.value.trim();
+    if (!text) return;
+
+    addMessage(text, "user");
+    input.value = "";
+    sendBtn.disabled = true;
+
+    const typingEl = addMessage("Léa écrit…", "bot typing");
+
+    try {
+      const res = await fetch(API_URL + "/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: sessionId, message: text }),
+      });
+
+      if (!res.ok) throw new Error("Erreur API : " + res.status);
+      const data = await res.json();
+
+      typingEl.remove();
+      addMessage(data.reply, "bot");
+      setScore(data.score, data.category);
+    } catch (err) {
+      typingEl.remove();
+      addMessage("⚠️ Impossible de contacter le serveur. Vérifiez que l'API tourne (uvicorn main:app --reload).", "bot");
+      console.error(err);
+    } finally {
+      sendBtn.disabled = false;
+      input.focus();
+    }
+  }
+
+  sendBtn.addEventListener("click", sendMessage);
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") sendMessage();
+  });
+</script>
+
+</body>
+</html>

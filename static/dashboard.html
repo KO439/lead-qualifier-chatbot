@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NODE. — Dashboard leads</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #0F1225;
+    --paper: #F5F3EC;
+    --accent-electric: #4C6FFF;
+    --accent-signal: #FFB238;
+    --text-light: #EDEFF7;
+    --text-dim: #9096B8;
+    --text-dark: #1B1E2E;
+    --ok-green: #3DDC97;
+    --cold: #6B7099;
+    --radius: 10px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: var(--paper); color: var(--text-dark); }
+
+  nav {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 24px 48px; background: var(--bg-deep); color: var(--text-light);
+  }
+  .logo { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 22px; }
+  .logo span { color: var(--accent-signal); }
+  nav a { color: var(--text-dim); text-decoration: none; font-size: 14px; }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 48px; }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .subtitle { color: var(--text-dark); opacity: 0.6; font-size: 14px; margin-bottom: 40px; }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+  .stat-card {
+    background: white; border: 1px solid rgba(27,30,46,0.1);
+    border-radius: var(--radius); padding: 20px;
+  }
+  .stat-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.55; margin-bottom: 10px;
+  }
+  .stat-value { font-family: 'Space Grotesk', sans-serif; font-size: 30px; font-weight: 700; }
+  .stat-value.chaud { color: #D9502A; }
+  .stat-value.tiede { color: #C88300; }
+  .stat-value.froid { color: var(--cold); }
+
+  .section-title {
+    font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 600;
+    margin-bottom: 18px; margin-top: 12px;
+  }
+
+  table { width: 100%; border-collapse: collapse; background: white; border-radius: var(--radius); overflow: hidden; }
+  th {
+    text-align: left; font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.55;
+    padding: 14px 16px; border-bottom: 2px solid rgba(27,30,46,0.1);
+  }
+  td { padding: 14px 16px; border-bottom: 1px solid rgba(27,30,46,0.08); font-size: 14px; }
+  tr:last-child td { border-bottom: none; }
+
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600;
+    text-transform: uppercase;
+  }
+  .badge.chaud { background: #FDEDE8; color: #D9502A; }
+  .badge.tiede { background: #FFF3DC; color: #C88300; }
+  .badge.froid { background: #EEEFF5; color: var(--cold); }
+
+  .score-cell { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+
+  .empty-state {
+    background: white; border: 1px dashed rgba(27,30,46,0.2); border-radius: var(--radius);
+    padding: 48px; text-align: center; color: var(--text-dark); opacity: 0.6; font-size: 14px;
+  }
+
+  .top-products { display: flex; flex-direction: column; gap: 10px; margin-bottom: 40px; }
+  .top-product-row {
+    display: flex; align-items: center; gap: 12px; background: white;
+    border-radius: var(--radius); padding: 12px 16px; border: 1px solid rgba(27,30,46,0.1);
+  }
+  .top-product-name { flex: 1; font-size: 14px; font-weight: 500; }
+  .top-product-count {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent-electric); font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">NODE<span>.</span> <span style="font-size:13px; color:var(--text-dim); font-weight:400;">/ dashboard</span></div>
+  <a href="/static/index.html">← Retour à la boutique</a>
+</nav>
+
+<main>
+  <h1>Leads qualifiés</h1>
+  <p class="subtitle" id="last-updated">Chargement…</p>
+
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-label">Total leads</div><div class="stat-value" id="stat-total">—</div></div>
+    <div class="stat-card"><div class="stat-label">Chauds</div><div class="stat-value chaud" id="stat-chaud">—</div></div>
+    <div class="stat-card"><div class="stat-label">Tièdes</div><div class="stat-value tiede" id="stat-tiede">—</div></div>
+    <div class="stat-card"><div class="stat-label">Froids</div><div class="stat-value froid" id="stat-froid">—</div></div>
+    <div class="stat-card"><div class="stat-label">Score moyen</div><div class="stat-value" id="stat-avg">—</div></div>
+  </div>
+
+  <div class="section-title">Produits les plus demandés</div>
+  <div class="top-products" id="top-products"></div>
+
+  <div class="section-title">Détail des leads</div>
+  <div id="leads-container"></div>
+</main>
+
+<script>
+  const API_URL = "http://127.0.0.1:8000";
+
+  async function loadDashboard() {
+    try {
+      const [statsRes, leadsRes] = await Promise.all([
+        fetch(API_URL + "/leads/stats"),
+        fetch(API_URL + "/leads"),
+      ]);
+      const stats = await statsRes.json();
+      const leads = await leadsRes.json();
+
+      document.getElementById("last-updated").textContent =
+        `Mis à jour maintenant · ${new Date().toLocaleString("fr-FR")}`;
+
+      document.getElementById("stat-total").textContent = stats.total_leads;
+      document.getElementById("stat-chaud").textContent = stats.chaud;
+      document.getElementById("stat-tiede").textContent = stats.tiede;
+      document.getElementById("stat-froid").textContent = stats.froid;
+      document.getElementById("stat-avg").textContent = stats.score_moyen + "/100";
+
+      const topProductsEl = document.getElementById("top-products");
+      if (stats.top_produits.length === 0) {
+        topProductsEl.innerHTML = `<div class="empty-state">Pas encore assez de conversations pour dégager une tendance.</div>`;
+      } else {
+        topProductsEl.innerHTML = stats.top_produits.map(p => `
+          <div class="top-product-row">
+            <div class="top-product-name">${p.produit}</div>
+            <div class="top-product-count">${p.mentions} mention${p.mentions > 1 ? "s" : ""}</div>
+          </div>
+        `).join("");
+      }
+
+      const container = document.getElementById("leads-container");
+      if (leads.length === 0) {
+        container.innerHTML = `<div class="empty-state">Aucun lead pour l'instant. Discutez avec le chatbot sur la boutique pour en générer.</div>`;
+        return;
+      }
+
+      container.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Session</th>
+              <th>Score</th>
+              <th>Catégorie</th>
+              <th>Produit recherché</th>
+              <th>Budget</th>
+              <th>Contact</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${leads.map(l => `
+              <tr>
+                <td>${l.session_id}</td>
+                <td class="score-cell">${l.score}/100</td>
+                <td><span class="badge ${l.category}">${l.category}</span></td>
+                <td>${l.extracted_info.produit_recherche || "—"}</td>
+                <td>${l.extracted_info.budget_estime || "—"}</td>
+                <td>${l.extracted_info.email_ou_contact || "—"}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+    } catch (err) {
+      document.getElementById("leads-container").innerHTML =
+        `<div class="empty-state">⚠️ Impossible de contacter l'API. Vérifiez que le serveur tourne (uvicorn main:app --reload).</div>`;
+      console.error(err);
+    }
+  }
+
+  loadDashboard();
+  setInterval(loadDashboard, 10000); // rafraîchit toutes les 10 secondes
+</script>
+
+</body>
+</html>
