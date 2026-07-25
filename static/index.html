@@ -372,10 +372,10 @@
 </div>
 
 <script>
-  // ---- Adresse de l'API backend (FastAPI). Modifiez si vous déployez ailleurs. ----
-  const API_URL = "http://127.0.0.1:8000";
+  // Utilisation d'une URL relative pour cibler automatiquement le serveur hôte (local ou Render)
+  const API_URL = "";
 
-  // ---- Catalogue affiché sur la page (miroir du fichier data/products_catalog.json) ----
+  // Catalogue affiché sur la page
   const products = [
     { nom: "Laptop Acer Aspire 3", cat: "Ordinateur portable", prix: 349, desc: "Léger, 8Go RAM, 256Go SSD. Études et bureautique." },
     { nom: "Laptop Dell Inspiron 15", cat: "Ordinateur portable", prix: 649, desc: "Core i5, 16Go RAM, 512Go SSD. Travail et loisirs." },
@@ -399,7 +399,7 @@
     </div>
   `).join("");
 
-  // ---- Widget de chat ----
+  // Widget de chat
   const toggle = document.getElementById("chat-toggle");
   const panel = document.getElementById("chat-panel");
   const messagesEl = document.getElementById("chat-messages");
@@ -456,7 +456,7 @@
       setScore(data.score, data.category);
     } catch (err) {
       typingEl.remove();
-      addMessage("⚠️ Impossible de contacter le serveur. Vérifiez que l'API tourne (uvicorn main:app --reload).", "bot");
+      addMessage("⚠️ Impossible de contacter le serveur. Vérifiez que l'API tourne.", "bot");
       console.error(err);
     } finally {
       sendBtn.disabled = false;
