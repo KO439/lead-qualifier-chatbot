@@ -10,6 +10,7 @@ Puis tester sur : http://127.0.0.1:8000/docs
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 import json
 
@@ -31,7 +32,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Sert la page de demo e-commerce + le widget de chat sur http://127.0.0.1:8000/
+# Sert la page de demo e-commerce + le widget de chat
 app.mount("/static", StaticFiles(directory="static", html=True), name="static")
 
 
@@ -130,5 +131,5 @@ def get_leads_stats():
 
 @app.get("/")
 def root():
-    return {"status": "Chatbot de qualification de leads - API en ligne",
-            "demo": "Ouvrez http://127.0.0.1:8000/static/index.html pour voir la démo"}
+    """Redirige l'accès à la racine directement vers l'interface du chatbot."""
+    return RedirectResponse(url="/static/index.html")
