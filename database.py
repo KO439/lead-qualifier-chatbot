@@ -1,25 +1,29 @@
 """
-Gestion de la base de donnees SQLite.
-Stocke chaque session de conversation avec son historique, ses infos extraites
-et son score de qualification.
+Gestion de la base de donnees PostgreSQL (persistante, via Supabase).
+Stocke chaque session de conversation avec son historique, ses infos
+extraites et son score de qualification. Remplace l'ancienne version
+SQLite, qui etait effacee a chaque redeploiement sur Render.
 """
-import sqlite3
+import psycopg2
+from psycopg2.extras import RealDictCursor
+import os
 import json
 from datetime import datetime
-from pathlib import Path
+from dotenv import load_dotenv
 
-DB_PATH = Path(__file__).parent / "data" / "leads.db"
+load_dotenv()
+
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 
 def get_connection():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
 
 
 def init_db():
     conn = get_connection()
-    conn.execute("""
+    cur = conn.cursor()
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS leads (
             session_id TEXT PRIMARY KEY,
             messages TEXT NOT NULL DEFAULT '[]',
@@ -32,20 +36,25 @@ def init_db():
         )
     """)
     conn.commit()
+    cur.close()
     conn.close()
 
 
 def get_or_create_session(session_id: str) -> dict:
     conn = get_connection()
-    row = conn.execute("SELECT * FROM leads WHERE session_id = ?", (session_id,)).fetchone()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM leads WHERE session_id = %s", (session_id,))
+    row = cur.fetchone()
     if row is None:
         now = datetime.utcnow().isoformat()
-        conn.execute(
-            "INSERT INTO leads (session_id, created_at, updated_at) VALUES (?, ?, ?)",
+        cur.execute(
+            "INSERT INTO leads (session_id, created_at, updated_at) VALUES (%s, %s, %s)",
             (session_id, now, now),
         )
         conn.commit()
-        row = conn.execute("SELECT * FROM leads WHERE session_id = ?", (session_id,)).fetchone()
+        cur.execute("SELECT * FROM leads WHERE session_id = %s", (session_id,))
+        row = cur.fetchone()
+    cur.close()
     conn.close()
     return dict(row)
 
@@ -53,33 +62,39 @@ def get_or_create_session(session_id: str) -> dict:
 def update_session(session_id: str, messages: list, extracted_info: dict = None,
                     score: int = None, category: str = None, justification: str = None):
     conn = get_connection()
-    fields = ["messages = ?", "updated_at = ?"]
+    cur = conn.cursor()
+    fields = ["messages = %s", "updated_at = %s"]
     values = [json.dumps(messages, ensure_ascii=False), datetime.utcnow().isoformat()]
 
     if extracted_info is not None:
-        fields.append("extracted_info = ?")
+        fields.append("extracted_info = %s")
         values.append(json.dumps(extracted_info, ensure_ascii=False))
     if score is not None:
-        fields.append("score = ?")
+        fields.append("score = %s")
         values.append(score)
     if category is not None:
-        fields.append("category = ?")
+        fields.append("category = %s")
         values.append(category)
     if justification is not None:
-        fields.append("justification = ?")
+        fields.append("justification = %s")
         values.append(justification)
 
     values.append(session_id)
-    conn.execute(f"UPDATE leads SET {', '.join(fields)} WHERE session_id = ?", values)
+    cur.execute(f"UPDATE leads SET {', '.join(fields)} WHERE session_id = %s", values)
     conn.commit()
+    cur.close()
     conn.close()
 
 
 def list_leads(min_score: int = 0) -> list:
     conn = get_connection()
-    rows = conn.execute(
-        "SELECT * FROM leads WHERE score >= ? ORDER BY score DESC, updated_at DESC",
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT * FROM leads WHERE score >= %s ORDER BY score DESC, updated_at DESC",
         (min_score,),
-    ).fetchall()
+    )
+    rows = cur.fetchall()
+    cur.close()
     conn.close()
     return [dict(r) for r in rows]
+
