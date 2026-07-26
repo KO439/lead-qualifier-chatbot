@@ -2,6 +2,9 @@
 
 
 
+
+
+
 Architecture multi-agents (conversationnel / extraction / scoring) avec
 API 100% gratuite (Groq), sans besoin de carte bancaire.
 
