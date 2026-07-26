@@ -4,3 +4,4 @@ groq
 python-dotenv
 pydantic
 chromadb
+psycopg2-binary
