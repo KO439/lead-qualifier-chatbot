@@ -10,11 +10,11 @@ Puis tester sur : http://127.0.0.1:8000/docs
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
+from fastapi.responses import StreamingResponse, RedirectResponse
 from pydantic import BaseModel
 import json
 
-from agents.conversational_agent import get_bot_reply
+from agents.conversational_agent import get_bot_reply, get_bot_reply_stream
 from agents.extraction_agent import extract_info
 from agents.scoring_agent import compute_score
 from rag.catalog import search_products
@@ -32,7 +32,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Sert la page de demo e-commerce + le widget de chat
+# Sert la page de demo e-commerce + le widget de chat sur http://127.0.0.1:8000/
 app.mount("/static", StaticFiles(directory="static", html=True), name="static")
 
 
@@ -87,6 +87,58 @@ def chat(req: ChatRequest):
         justification=scoring["justification"],
         extracted_info=extracted,
     )
+
+
+@app.post("/chat/stream")
+def chat_stream(req: ChatRequest):
+    """
+    Version streaming de /chat : renvoie la reponse de Lea token par token
+    au format Server-Sent Events (SSE), pour un affichage "machine a ecrire"
+    en temps reel cote interface. Une fois la reponse complete generee,
+    l'extraction et le scoring tournent normalement et le resultat final
+    est envoye dans un dernier evenement "done".
+    """
+    session = database.get_or_create_session(req.session_id)
+    history = json.loads(session["messages"])
+    history.append({"role": "user", "content": req.message})
+
+    relevant_products = search_products(req.message, n_results=3)
+
+    def event_generator():
+        full_reply = ""
+        stream = get_bot_reply_stream(history, product_context=relevant_products)
+
+        for chunk in stream:
+            delta = chunk.choices[0].delta.content
+            if delta:
+                full_reply += delta
+                payload = json.dumps({"type": "token", "content": delta}, ensure_ascii=False)
+                yield f"data: {payload}\n\n"
+
+        history.append({"role": "assistant", "content": full_reply})
+
+        extracted = extract_info(history)
+        scoring = compute_score(extracted)
+
+        database.update_session(
+            session_id=req.session_id,
+            messages=history,
+            extracted_info=extracted,
+            score=scoring["score"],
+            category=scoring["category"],
+            justification=scoring["justification"],
+        )
+
+        final_payload = json.dumps({
+            "type": "done",
+            "score": scoring["score"],
+            "category": scoring["category"],
+            "justification": scoring["justification"],
+            "extracted_info": extracted,
+        }, ensure_ascii=False)
+        yield f"data: {final_payload}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
 @app.get("/leads")
