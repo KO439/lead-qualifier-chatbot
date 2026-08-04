@@ -1,6 +1,10 @@
 """
 Agent conversationnel : gere le dialogue naturel avec le visiteur du site
 e-commerce, dans le but de qualifier son besoin sans etre intrusif.
+
+Supporte maintenant le streaming (get_bot_reply_stream) : les tokens sont
+renvoyes au fur et a mesure qu'ils sont generes, pour un effet "machine a
+ecrire" en temps reel cote interface, au lieu d'attendre la reponse complete.
 """
 import os
 from groq import Groq
@@ -28,13 +32,7 @@ Règles de conversation :
 """
 
 
-def get_bot_reply(conversation_history: list, product_context: list = None) -> str:
-    """
-    conversation_history: liste de dicts {"role": "user"/"assistant", "content": "..."}
-    product_context: liste optionnelle de produits pertinents (issus du RAG)
-                      trouvés par rapport au dernier message du visiteur.
-    Retourne la réponse texte du bot.
-    """
+def _build_messages(conversation_history: list, product_context: list = None) -> list:
     system_prompt = SYSTEM_PROMPT
 
     if product_context:
@@ -54,8 +52,12 @@ deux suggestions naturellement dans la conversation, avec leur prix :
 Si aucun de ces produits ne correspond vraiment à la demande, n'en parle pas
 et continue simplement la conversation normalement."""
 
-    messages = [{"role": "system", "content": system_prompt}] + conversation_history
+    return [{"role": "system", "content": system_prompt}] + conversation_history
 
+
+def get_bot_reply(conversation_history: list, product_context: list = None) -> str:
+    """Version non-streaming : attend la reponse complete avant de la renvoyer."""
+    messages = _build_messages(conversation_history, product_context)
     response = client.chat.completions.create(
         model=MODEL,
         messages=messages,
@@ -63,3 +65,19 @@ et continue simplement la conversation normalement."""
         max_tokens=300,
     )
     return response.choices[0].message.content
+
+
+def get_bot_reply_stream(conversation_history: list, product_context: list = None):
+    """
+    Version streaming : retourne un iterateur de chunks Groq. Chaque chunk
+    contient un morceau de texte (chunk.choices[0].delta.content), a
+    consommer au fur et a mesure cote appelant.
+    """
+    messages = _build_messages(conversation_history, product_context)
+    return client.chat.completions.create(
+        model=MODEL,
+        messages=messages,
+        temperature=0.7,
+        max_tokens=300,
+        stream=True,
+    )
