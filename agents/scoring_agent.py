@@ -13,8 +13,8 @@ v2 (recalibree apres tests/test_scenarios.py) :
 """
 
 WEIGHTS = {
-    "produit_recherche": 0,
-    "budget_estime": 0,       # uniquement si un montant concret est extrait
+    "produit_recherche": 20,
+    "budget_estime": 25,       # uniquement si un montant concret est extrait
     "contact": 15,
 }
 
