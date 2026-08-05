@@ -8,6 +8,10 @@ Ces resultats sont a inclure dans la partie "evaluation" de votre rapport
 de stage : ils prouvent la coherence du scoring avec des cas concrets.
 
 Lancer avec : python tests/test_scenarios.py
+
+Ce script est aussi utilise en CI (GitHub Actions, voir
+.github/workflows/tests.yml) : il quitte avec un code d'erreur si le taux
+de coherence descend sous SEUIL_MINIMUM, ce qui fait echouer le build.
 """
 import sys
 from pathlib import Path
@@ -16,6 +20,8 @@ sys.path.append(str(Path(__file__).parent.parent))
 
 from agents.extraction_agent import extract_info
 from agents.scoring_agent import compute_score
+
+SEUIL_MINIMUM = 70  # % de coherence minimum accepte avant de faire echouer la CI
 
 # Chaque scenario : une conversation deja ecrite + la categorie attendue
 # (definie a la main, en se basant sur le bon sens commercial).
@@ -126,6 +132,15 @@ def run_tests():
     print("\nÀ inclure dans le rapport : ce tableau prouve que le scoring")
     print("réagit de façon cohérente à des situations commerciales variées,")
     print("y compris les cas limites (réclamation, curiosité, comparaison).")
+
+    if success_rate < SEUIL_MINIMUM:
+        print(f"\n❌ Cohérence ({success_rate:.0f}%) sous le seuil minimum "
+              f"({SEUIL_MINIMUM}%) — build en échec.")
+        sys.exit(1)
+    else:
+        print(f"\n✅ Cohérence ({success_rate:.0f}%) au-dessus du seuil "
+              f"minimum ({SEUIL_MINIMUM}%) — build réussi.")
+        sys.exit(0)
 
 
 if __name__ == "__main__":
