@@ -2,6 +2,9 @@
 
 
 
+![Tests](https://github.com/KO439/lead-qualifier-chatbot/actions/workflows/tests.yml/badge.svg)
+
+
 
 
 
