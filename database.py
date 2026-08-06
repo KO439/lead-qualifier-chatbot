@@ -31,9 +31,14 @@ def init_db():
             score INTEGER DEFAULT 0,
             category TEXT DEFAULT 'inconnu',
             justification TEXT DEFAULT '',
+            alerted BOOLEAN DEFAULT FALSE,
             created_at TEXT,
             updated_at TEXT
         )
+    """)
+    # Ajoute la colonne si la table existait deja sans (mise a jour progressive)
+    cur.execute("""
+        ALTER TABLE leads ADD COLUMN IF NOT EXISTS alerted BOOLEAN DEFAULT FALSE
     """)
     conn.commit()
     cur.close()
@@ -60,7 +65,8 @@ def get_or_create_session(session_id: str) -> dict:
 
 
 def update_session(session_id: str, messages: list, extracted_info: dict = None,
-                    score: int = None, category: str = None, justification: str = None):
+                    score: int = None, category: str = None, justification: str = None,
+                    alerted: bool = None):
     conn = get_connection()
     cur = conn.cursor()
     fields = ["messages = %s", "updated_at = %s"]
@@ -78,6 +84,9 @@ def update_session(session_id: str, messages: list, extracted_info: dict = None,
     if justification is not None:
         fields.append("justification = %s")
         values.append(justification)
+    if alerted is not None:
+        fields.append("alerted = %s")
+        values.append(alerted)
 
     values.append(session_id)
     cur.execute(f"UPDATE leads SET {', '.join(fields)} WHERE session_id = %s", values)
@@ -97,4 +106,3 @@ def list_leads(min_score: int = 0) -> list:
     cur.close()
     conn.close()
     return [dict(r) for r in rows]
-
