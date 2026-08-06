@@ -229,21 +229,3 @@ excellent exemple à documenter dans votre rapport** : elle montre une
 vraie démarche d'ingénierie pilotée par les tests, pas juste "ça a l'air
 de marcher".
 
-## Prochaines étapes pour aller plus loin (à faire progressivement)
-
-1. **Bascule vers un modèle local (Ollama)** si vous voulez montrer une
-   solution 100% auto-hébergée (argument confidentialité des données).
-2. **Déploiement en ligne** (Render/Railway, gratuit) pour avoir une URL
-   publique à montrer à votre encadrante sans lancer le serveur localement.
-3. **Authentification simple** sur le dashboard si vous le rendez public
-   (mot de passe basique, pour ne pas exposer les leads à tout le monde).
-
-## Notes pour le rapport de stage
-
-- Le scoring est **explicable** (chaque point est justifié) : bon argument
-  éthique/transparence à mentionner.
-- L'architecture est **modulaire** : chaque agent est un fichier séparé,
-  facile à faire évoluer ou remplacer (ex: changer de LLM sans tout casser).
-- Tout est **gratuit et sans dépendance à un CRM externe**, adapté à votre
-  contexte de stage actuel, avec un chemin clair vers une intégration
-  future (RAG, CRM, widget web).
