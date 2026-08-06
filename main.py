@@ -18,6 +18,7 @@ from agents.conversational_agent import get_bot_reply, get_bot_reply_stream
 from agents.extraction_agent import extract_info
 from agents.scoring_agent import compute_score
 from rag.catalog import search_products
+from notifications import send_hot_lead_alert
 import database
 
 app = FastAPI(title="Chatbot IA de qualification de leads")
@@ -71,6 +72,7 @@ def chat(req: ChatRequest):
     scoring = compute_score(extracted)
 
     # 6. Sauvegarder en base
+    already_alerted = session.get("alerted", False)
     database.update_session(
         session_id=req.session_id,
         messages=history,
@@ -79,6 +81,11 @@ def chat(req: ChatRequest):
         category=scoring["category"],
         justification=scoring["justification"],
     )
+
+    # 7. Alerter l'equipe commerciale si le lead vient de devenir chaud
+    if scoring["category"] == "chaud" and not already_alerted:
+        send_hot_lead_alert(req.session_id, extracted, scoring["score"], scoring["justification"])
+        database.update_session(session_id=req.session_id, messages=history, alerted=True)
 
     return ChatResponse(
         reply=bot_reply,
@@ -120,6 +127,7 @@ def chat_stream(req: ChatRequest):
         extracted = extract_info(history)
         scoring = compute_score(extracted)
 
+        already_alerted = session.get("alerted", False)
         database.update_session(
             session_id=req.session_id,
             messages=history,
@@ -128,6 +136,10 @@ def chat_stream(req: ChatRequest):
             category=scoring["category"],
             justification=scoring["justification"],
         )
+
+        if scoring["category"] == "chaud" and not already_alerted:
+            send_hot_lead_alert(req.session_id, extracted, scoring["score"], scoring["justification"])
+            database.update_session(session_id=req.session_id, messages=history, alerted=True)
 
         final_payload = json.dumps({
             "type": "done",
