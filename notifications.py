@@ -42,7 +42,7 @@ def send_hot_lead_alert(session_id: str, extracted_info: dict, score: int, justi
 
     try:
         resend.Emails.send({
-            "from": "Lead Qualifier <onboarding@resend.dev>",
+            "from": "Lead Qualifier <othmanikhouloud0@gmail.com>",
             "to": [SALES_EMAIL],
             "subject": f"🔥 Nouveau lead chaud — {score}/100 — {produit}",
             "html": html,
