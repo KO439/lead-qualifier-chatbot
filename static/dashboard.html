@@ -68,7 +68,7 @@
     text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.55;
     padding: 14px 16px; border-bottom: 2px solid rgba(27,30,46,0.1);
   }
-  td { padding: 14px 16px; border-bottom: 1px solid rgba(27,30,46,0.08); font-size: 14px; }
+  td { padding: 14px 16px; border-bottom: 1px solid rgba(27,30,46,0.08); font-size: 14px; white-space: normal; word-break: break-word; }
   tr:last-child td { border-bottom: none; }
 
   .badge {
@@ -170,8 +170,9 @@
               <th>Session</th>
               <th>Score</th>
               <th>Catégorie</th>
-              <th>Produit recherché</th>
-              <th>Budget</th>
+              <th>Résumé IA</th>
+              <th>Action recommandée</th>
+              <th>Priorité</th>
               <th>Contact</th>
             </tr>
           </thead>
@@ -181,8 +182,9 @@
                 <td>${l.session_id}</td>
                 <td class="score-cell">${l.score}/100</td>
                 <td><span class="badge ${l.category}">${l.category}</span></td>
-                <td>${l.extracted_info.produit_recherche || "—"}</td>
-                <td>${l.extracted_info.budget_estime || "—"}</td>
+                <td style="max-width:220px;">${l.resume || "—"}</td>
+                <td style="max-width:260px;">${l.action_recommandee || "—"}</td>
+                <td><span class="badge ${l.priorite === 'haute' ? 'chaud' : l.priorite === 'moyenne' ? 'tiede' : 'froid'}">${l.priorite || "—"}</span></td>
                 <td>${l.extracted_info.email_ou_contact || "—"}</td>
               </tr>
             `).join("")}
