@@ -1,8 +1,8 @@
 """
 Gestion de la base de donnees PostgreSQL (persistante, via Supabase).
 Stocke chaque session de conversation avec son historique, ses infos
-extraites et son score de qualification. Remplace l'ancienne version
-SQLite, qui etait effacee a chaque redeploiement sur Render.
+extraites, son score de qualification, et maintenant le resume + l'action
+recommandee generes par l'agent d'analyse commerciale.
 """
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -32,14 +32,18 @@ def init_db():
             category TEXT DEFAULT 'inconnu',
             justification TEXT DEFAULT '',
             alerted BOOLEAN DEFAULT FALSE,
+            resume TEXT DEFAULT '',
+            action_recommandee TEXT DEFAULT '',
+            priorite TEXT DEFAULT '',
             created_at TEXT,
             updated_at TEXT
         )
     """)
-    # Ajoute la colonne si la table existait deja sans (mise a jour progressive)
-    cur.execute("""
-        ALTER TABLE leads ADD COLUMN IF NOT EXISTS alerted BOOLEAN DEFAULT FALSE
-    """)
+    # Ajoute les colonnes si la table existait deja sans (mise a jour progressive)
+    cur.execute("ALTER TABLE leads ADD COLUMN IF NOT EXISTS alerted BOOLEAN DEFAULT FALSE")
+    cur.execute("ALTER TABLE leads ADD COLUMN IF NOT EXISTS resume TEXT DEFAULT ''")
+    cur.execute("ALTER TABLE leads ADD COLUMN IF NOT EXISTS action_recommandee TEXT DEFAULT ''")
+    cur.execute("ALTER TABLE leads ADD COLUMN IF NOT EXISTS priorite TEXT DEFAULT ''")
     conn.commit()
     cur.close()
     conn.close()
@@ -66,7 +70,8 @@ def get_or_create_session(session_id: str) -> dict:
 
 def update_session(session_id: str, messages: list, extracted_info: dict = None,
                     score: int = None, category: str = None, justification: str = None,
-                    alerted: bool = None):
+                    alerted: bool = None, resume: str = None,
+                    action_recommandee: str = None, priorite: str = None):
     conn = get_connection()
     cur = conn.cursor()
     fields = ["messages = %s", "updated_at = %s"]
@@ -87,6 +92,15 @@ def update_session(session_id: str, messages: list, extracted_info: dict = None,
     if alerted is not None:
         fields.append("alerted = %s")
         values.append(alerted)
+    if resume is not None:
+        fields.append("resume = %s")
+        values.append(resume)
+    if action_recommandee is not None:
+        fields.append("action_recommandee = %s")
+        values.append(action_recommandee)
+    if priorite is not None:
+        fields.append("priorite = %s")
+        values.append(priorite)
 
     values.append(session_id)
     cur.execute(f"UPDATE leads SET {', '.join(fields)} WHERE session_id = %s", values)
