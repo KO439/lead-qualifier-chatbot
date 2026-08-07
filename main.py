@@ -1,8 +1,12 @@
 """
-Point d'entree de l'API. Orchestre :
-1. Agent conversationnel -> genere la reponse au visiteur
+Point d'entree de l'API. Orchestre 4 agents IA :
+1. Agent conversationnel -> genere la reponse au visiteur (streaming)
 2. Agent d'extraction -> extrait les infos structurees de la conversation
-3. Agent de scoring -> calcule le score de qualification
+3. Agent de scoring -> calcule le score de qualification (regles, sans IA,
+   pour rester explicable)
+4. Agent d'analyse commerciale -> resume la conversation et recommande une
+   action concrete au commercial (raisonnement IA de haut niveau, generique
+   a n'importe quel secteur)
 
 Lancer avec : uvicorn main:app --reload
 Puis tester sur : http://127.0.0.1:8000/docs
@@ -17,6 +21,7 @@ import json
 from agents.conversational_agent import get_bot_reply, get_bot_reply_stream
 from agents.extraction_agent import extract_info
 from agents.scoring_agent import compute_score
+from agents.insight_agent import generate_insight
 from rag.catalog import search_products
 from notifications import send_hot_lead_alert
 import database
@@ -48,31 +53,24 @@ class ChatResponse(BaseModel):
     category: str
     justification: str
     extracted_info: dict
+    resume: str = ""
+    action_recommandee: str = ""
+    priorite: str = ""
 
 
-@app.post("/chat", response_model=ChatResponse)
-def chat(req: ChatRequest):
-    session = database.get_or_create_session(req.session_id)
-    history = json.loads(session["messages"])
+def _process_turn_after_reply(session, req, history, full_reply):
+    """
+    Logique commune apres la generation de la reponse du bot (streaming ou
+    non) : extraction, scoring, insight commercial, sauvegarde, alerte.
+    """
+    history.append({"role": "assistant", "content": full_reply})
 
-    # 1. Ajouter le message utilisateur a l'historique
-    history.append({"role": "user", "content": req.message})
-
-    # 2. RAG : chercher des produits pertinents par rapport au message du visiteur
-    relevant_products = search_products(req.message, n_results=3)
-
-    # 3. Agent conversationnel : generer la reponse (avec contexte produits)
-    bot_reply = get_bot_reply(history, product_context=relevant_products)
-    history.append({"role": "assistant", "content": bot_reply})
-
-    # 4. Agent d'extraction : mettre a jour les infos connues sur ce lead
     extracted = extract_info(history)
-
-    # 5. Agent de scoring : recalculer le score en continu
     scoring = compute_score(extracted)
+    insight = generate_insight(history, extracted, scoring["score"], scoring["category"])
 
-    # 6. Sauvegarder en base
     already_alerted = session.get("alerted", False)
+
     database.update_session(
         session_id=req.session_id,
         messages=history,
@@ -80,12 +78,28 @@ def chat(req: ChatRequest):
         score=scoring["score"],
         category=scoring["category"],
         justification=scoring["justification"],
+        resume=insight.get("resume", ""),
+        action_recommandee=insight.get("action_recommandee", ""),
+        priorite=insight.get("priorite", ""),
     )
 
-    # 7. Alerter l'equipe commerciale si le lead vient de devenir chaud
     if scoring["category"] == "chaud" and not already_alerted:
         send_hot_lead_alert(req.session_id, extracted, scoring["score"], scoring["justification"])
         database.update_session(session_id=req.session_id, messages=history, alerted=True)
+
+    return extracted, scoring, insight
+
+
+@app.post("/chat", response_model=ChatResponse)
+def chat(req: ChatRequest):
+    session = database.get_or_create_session(req.session_id)
+    history = json.loads(session["messages"])
+    history.append({"role": "user", "content": req.message})
+
+    relevant_products = search_products(req.message, n_results=3)
+    bot_reply = get_bot_reply(history, product_context=relevant_products)
+
+    extracted, scoring, insight = _process_turn_after_reply(session, req, history, bot_reply)
 
     return ChatResponse(
         reply=bot_reply,
@@ -93,6 +107,9 @@ def chat(req: ChatRequest):
         category=scoring["category"],
         justification=scoring["justification"],
         extracted_info=extracted,
+        resume=insight.get("resume", ""),
+        action_recommandee=insight.get("action_recommandee", ""),
+        priorite=insight.get("priorite", ""),
     )
 
 
@@ -100,10 +117,9 @@ def chat(req: ChatRequest):
 def chat_stream(req: ChatRequest):
     """
     Version streaming de /chat : renvoie la reponse de Lea token par token
-    au format Server-Sent Events (SSE), pour un affichage "machine a ecrire"
-    en temps reel cote interface. Une fois la reponse complete generee,
-    l'extraction et le scoring tournent normalement et le resultat final
-    est envoye dans un dernier evenement "done".
+    au format Server-Sent Events (SSE). Une fois la reponse complete
+    generee, extraction + scoring + insight commercial tournent, et le
+    resultat final est envoye dans un dernier evenement "done".
     """
     session = database.get_or_create_session(req.session_id)
     history = json.loads(session["messages"])
@@ -122,24 +138,7 @@ def chat_stream(req: ChatRequest):
                 payload = json.dumps({"type": "token", "content": delta}, ensure_ascii=False)
                 yield f"data: {payload}\n\n"
 
-        history.append({"role": "assistant", "content": full_reply})
-
-        extracted = extract_info(history)
-        scoring = compute_score(extracted)
-
-        already_alerted = session.get("alerted", False)
-        database.update_session(
-            session_id=req.session_id,
-            messages=history,
-            extracted_info=extracted,
-            score=scoring["score"],
-            category=scoring["category"],
-            justification=scoring["justification"],
-        )
-
-        if scoring["category"] == "chaud" and not already_alerted:
-            send_hot_lead_alert(req.session_id, extracted, scoring["score"], scoring["justification"])
-            database.update_session(session_id=req.session_id, messages=history, alerted=True)
+        extracted, scoring, insight = _process_turn_after_reply(session, req, history, full_reply)
 
         final_payload = json.dumps({
             "type": "done",
@@ -147,6 +146,9 @@ def chat_stream(req: ChatRequest):
             "category": scoring["category"],
             "justification": scoring["justification"],
             "extracted_info": extracted,
+            "resume": insight.get("resume", ""),
+            "action_recommandee": insight.get("action_recommandee", ""),
+            "priorite": insight.get("priorite", ""),
         }, ensure_ascii=False)
         yield f"data: {final_payload}\n\n"
 
