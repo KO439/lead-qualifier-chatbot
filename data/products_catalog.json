@@ -68,5 +68,12 @@
     "description": "Tablette d'entrée de gamme, légère, bonne pour la lecture, le streaming et un usage familial.",
     "prix": 219,
     "categorie": "tablette"
+  },
+  {
+    "id": "p11",
+    "nom": "Webcam Logitech C920 HD",
+    "description": "Webcam Full HD 1080p avec micro integre, ideale pour le streaming, les jeux en ligne et les visioconferences.",
+    "prix": 89,
+    "categorie": "accessoire informatique"
   }
 ]
