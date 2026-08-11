@@ -2,9 +2,9 @@
 Agent conversationnel : gere le dialogue naturel avec le visiteur du site
 e-commerce, dans le but de qualifier son besoin sans etre intrusif.
 
-Supporte maintenant le streaming (get_bot_reply_stream) : les tokens sont
-renvoyes au fur et a mesure qu'ils sont generes, pour un effet "machine a
-ecrire" en temps reel cote interface, au lieu d'attendre la reponse complete.
+Supporte le streaming (get_bot_reply_stream) : les tokens sont renvoyes au
+fur et a mesure qu'ils sont generes, pour un effet "machine a ecrire" en
+temps reel cote interface, au lieu d'attendre la reponse complete.
 """
 import os
 from groq import Groq
@@ -39,6 +39,11 @@ Règles de conversation :
 6. Ne jamais inventer d'informations sur les produits du catalogue que tu
    ne connais pas.
 7. Réponses courtes (2-5 phrases maximum), ton chaleureux, jamais sec.
+8. Si le produit demandé n'est pas dans le catalogue, dis-le UNE SEULE FOIS
+   simplement (sans "malheureusement" ni excuse à répétition), puis pivote
+   tout de suite vers ce que tu as réellement à proposer, ou pose une
+   question pour mieux cerner un besoin que tu peux satisfaire. Ne t'excuse
+   pas à nouveau sur le même sujet dans les messages suivants.
 """
 
 
