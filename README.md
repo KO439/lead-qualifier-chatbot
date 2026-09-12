@@ -234,9 +234,9 @@ de marcher".
 
 ### AI Chatbot
 
-![AI Chatbot](test/Screenshot%20from%202026-09-12%2012-11-55.png)
+![AI Chatbot](tests/Screenshot%20from%202026-09-12%2012-11-55.png)
 
 ### Lead Dashboard
 
-![Lead Dashboard](test/Screenshot%20from%202026-09-12%2012-12-37.png)
+![Lead Dashboard](tests/Screenshot%20from%202026-09-12%2012-12-37.png)
 
