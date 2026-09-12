@@ -232,9 +232,9 @@ de marcher".
 ## 📸 Demo
 
 ### AI Chatbot
-![Chatbot Demo](Screenshot from 2026-09-12 12-11-55.png)
+(Screenshot from 2026-09-12 12-11-55.png)
 
 ### Lead Dashboard
-![Chatbot Demo](sScreenshot from 2026-09-12 12-12-37.png)
+(Screenshot from 2026-09-12 12-12-37.png)
 
 
