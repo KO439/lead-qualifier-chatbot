@@ -232,6 +232,8 @@ de marcher".
 
 ## 📸 Demo
 
+## 📸 Demo
+
 ### AI Chatbot
 
 ![AI Chatbot](tests/Screenshot%20from%202026-09-12%2012-11-55.png)
@@ -239,4 +241,3 @@ de marcher".
 ### Lead Dashboard
 
 ![Lead Dashboard](tests/Screenshot%20from%202026-09-12%2012-12-37.png)
-
