@@ -229,3 +229,12 @@ excellent exemple à documenter dans votre rapport** : elle montre une
 vraie démarche d'ingénierie pilotée par les tests, pas juste "ça a l'air
 de marcher".
 
+## 📸 Demo
+
+### AI Chatbot
+![Chatbot Demo](Screenshot from 2026-09-12 12-11-55.png)
+
+### Lead Dashboard
+![Chatbot Demo](sScreenshot from 2026-09-12 12-12-37.png)
+
+
