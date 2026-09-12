@@ -228,13 +228,14 @@ cohérence. **Cette itération (avant/après, avec les chiffres) est un
 excellent exemple à documenter dans votre rapport** : elle montre une
 vraie démarche d'ingénierie pilotée par les tests, pas juste "ça a l'air
 de marcher".
-
 ## 📸 Demo
 
 ### AI Chatbot
-(Screenshot from 2026-09-12 12-11-55.png)
+
+![AI Chatbot](test/Screenshot%20from%202026-09-12%2012-11-55.png)
 
 ### Lead Dashboard
-(Screenshot from 2026-09-12 12-12-37.png)
+
+![Lead Dashboard](test/Screenshot%20from%202026-09-12%2012-12-37.png)
 
 
