@@ -6,3 +6,4 @@ pydantic
 chromadb
 psycopg2-binary
 resend
+paho-mqtt
