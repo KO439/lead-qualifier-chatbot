@@ -602,7 +602,4 @@ def root():
     Redirige vers l'interface du chatbot.
     """
 
-    return RedirectResponse(
-        url="/static/index.html"
-    )
-```
+     return RedirectResponse(url="/static/index.html")
