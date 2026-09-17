@@ -1,4 +1,4 @@
-```python
+
 """
 Point d'entree de l'API. Orchestre 4 agents IA :
 1. Agent conversationnel -> genere la reponse au visiteur (streaming)
