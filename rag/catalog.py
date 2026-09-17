@@ -1,16 +1,16 @@
-```python
 """
 Recherche dans le catalogue produits.
 
 La recherche combine :
-- recherche sémantique avec ChromaDB ;
-- filtres explicites : marque, catégorie, modèle et prix maximum.
+- recherche exacte / filtrée pour les marques, catégories et prix ;
+- recherche sémantique ChromaDB pour les demandes plus générales.
 """
 
-import chromadb
-from pathlib import Path
 import re
 import unicodedata
+from pathlib import Path
+
+import chromadb
 
 
 DB_PATH = Path(__file__).parent.parent / "data" / "chroma_db"
@@ -22,17 +22,35 @@ def get_collection():
     return client.get_or_create_collection(name=COLLECTION_NAME)
 
 
+def _normalize(text: str) -> str:
+    """Normalise un texte pour faciliter les comparaisons."""
+    text = str(text).lower().strip()
+
+    text = unicodedata.normalize("NFD", text)
+    text = "".join(
+        char for char in text
+        if unicodedata.category(char) != "Mn"
+    )
+
+    return text
+
+
 def index_products(products: list):
     """
-    Indexe ou ré-indexe une liste de produits.
+    Indexe ou ré-indexe les produits dans ChromaDB.
     """
+
     collection = get_collection()
 
-    ids = [str(p["id"]) for p in products]
+    ids = [p["id"] for p in products]
 
     documents = [
-        f"{p['nom']}. {p['description']} Prix : {p['prix']} euros. "
-        f"Catégorie : {p['categorie']}."
+        (
+            f"{p['nom']}. "
+            f"{p['description']} "
+            f"Prix : {p['prix']} euros. "
+            f"Catégorie : {p['categorie']}."
+        )
         for p in products
     ]
 
@@ -54,71 +72,56 @@ def index_products(products: list):
     return len(products)
 
 
-def _normalize(text: str) -> str:
-    """
-    Normalise un texte :
-    minuscules + suppression des accents.
-    """
-    text = str(text or "").lower().strip()
-
-    text = unicodedata.normalize("NFD", text)
-    text = "".join(
-        char for char in text
-        if unicodedata.category(char) != "Mn"
-    )
-
-    return text
-
-
 def _extract_price_limit(query: str):
     """
-    Exemples détectés :
+    Détecte les demandes du type :
     - moins de 700 €
-    - moins de 700 euros
-    - sous 700 €
+    - sous 700 euros
     - maximum 700 €
-    - max 700 €
     - jusqu'à 700 €
     """
 
-    q = _normalize(query)
+    text = _normalize(query)
 
     patterns = [
-        r"moins de\s+(\d+(?:[.,]\d+)?)",
-        r"sous\s+(\d+(?:[.,]\d+)?)",
-        r"(?:maximum|max)\s+(?:de\s+)?(\d+(?:[.,]\d+)?)",
-        r"jusqu['’]?\s*(?:a\s*)?(\d+(?:[.,]\d+)?)",
+        r"(?:moins de|sous|maximum|max|jusqu'a|jusqu a|au maximum|pas plus de)\s*(\d+(?:[.,]\d+)?)",
+        r"(\d+(?:[.,]\d+)?)\s*(?:euros?|€)\s*(?:maximum|max|ou moins)",
     ]
 
     for pattern in patterns:
-        match = re.search(pattern, q)
+        match = re.search(pattern, text)
 
         if match:
-            return float(match.group(1).replace(",", "."))
+            try:
+                return float(match.group(1).replace(",", "."))
+            except ValueError:
+                pass
 
     return None
 
 
 def _extract_brand(query: str):
     """
-    Détecte les marques explicitement demandées.
+    Détecte les marques présentes dans le catalogue.
     """
 
-    q = _normalize(query)
+    text = _normalize(query)
 
-    brands = [
-        "dell",
-        "hp",
-        "lenovo",
-        "acer",
-        "asus",
-        "apple",
-        "msi",
-        "huawei",
-    ]
+    brands = {
+        "acer": "acer",
+        "dell": "dell",
+        "apple": "apple",
+        "macbook": "apple",
+        "samsung": "samsung",
+        "iphone": "apple",
+        "jbl": "jbl",
+        "sony": "sony",
+        "logitech": "logitech",
+        "asus": "asus",
+    }
 
-    for brand in brands:
-        if re.search(rf"\b{re.escape(brand)}\b", q):
+    for keyword, brand in brands.items():
+        if re.search(rf"\b{re.escape(keyword)}\b", text):
             return brand
 
     return None
@@ -126,185 +129,246 @@ def _extract_brand(query: str):
 
 def _extract_category(query: str):
     """
-    Détecte la catégorie recherchée.
+    Détecte la catégorie demandée.
     """
 
-    q = _normalize(query)
+    text = _normalize(query)
 
-    if any(term in q for term in [
-        "laptop",
-        "laptops",
-        "ordinateur portable",
-        "pc portable",
-        "notebook",
-    ]):
-        return "laptop"
+    # Ordinateurs portables
+    if any(
+        term in text
+        for term in [
+            "pc",
+            "pcs",
+            "ordinateur portable",
+            "ordinateurs portables",
+            "pc portable",
+            "pc portables",
+            "laptop",
+            "laptops",
+            "notebook",
+            "notebooks",
+            "macbook",
+        ]
+    ):
+        return "ordinateur portable"
 
-    if any(term in q for term in [
-        "pc gamer",
-        "ordinateur gamer",
-        "gaming pc",
-        "gaming",
-    ]):
-        return "gamer"
+    # Smartphones
+    if any(
+        term in text
+        for term in [
+            "smartphone",
+            "smartphones",
+            "telephone",
+            "telephones",
+            "iphone",
+        ]
+    ):
+        return "smartphone"
 
-    if "macbook" in q:
-        return "macbook"
+    # Tablettes
+    if any(
+        term in text
+        for term in [
+            "tablette",
+            "tablettes",
+        ]
+    ):
+        return "tablette"
 
-    if any(term in q for term in [
-        "pc",
-        "ordinateur",
-        "computer",
-    ]):
-        return "pc"
+    # Audio
+    if any(
+        term in text
+        for term in [
+            "ecouteur",
+            "ecouteurs",
+            "casque",
+            "casques",
+            "audio",
+        ]
+    ):
+        return "accessoire audio"
+
+    # Accessoires informatiques
+    if any(
+        term in text
+        for term in [
+            "souris",
+            "ecran",
+            "écran",
+            "webcam",
+            "accessoire informatique",
+            "accessoires informatiques",
+        ]
+    ):
+        return "accessoire informatique"
 
     return None
 
 
-def _matches_category(meta: dict, category: str) -> bool:
+def _matches_category(product: dict, category: str) -> bool:
+    return _normalize(product.get("categorie", "")) == _normalize(category)
+
+
+def _matches_brand(product: dict, brand: str) -> bool:
     """
-    Vérifie qu'un produit appartient à la catégorie demandée.
-    """
-
-    nom = _normalize(meta.get("nom"))
-    categorie = _normalize(meta.get("categorie"))
-
-    if category == "laptop":
-        return any(term in nom or term in categorie for term in [
-            "laptop",
-            "ordinateur portable",
-            "pc portable",
-            "notebook",
-        ])
-
-    if category == "gamer":
-        return any(term in nom or term in categorie for term in [
-            "gamer",
-            "gaming",
-        ])
-
-    if category == "macbook":
-        return "macbook" in nom
-
-    if category == "pc":
-        return any(term in nom or term in categorie for term in [
-            "pc",
-            "ordinateur",
-            "laptop",
-            "notebook",
-        ])
-
-    return True
-
-
-def _matches_filters(meta: dict, query: str) -> bool:
-    """
-    Applique les filtres explicites présents dans la requête.
+    Vérifie la marque dans le nom du produit.
     """
 
-    nom = _normalize(meta.get("nom"))
-    prix = float(meta.get("prix", 0))
+    name = _normalize(product.get("nom", ""))
 
-    # Marque
-    brand = _extract_brand(query)
+    if brand == "apple":
+        return (
+            "apple" in name
+            or "macbook" in name
+            or "iphone" in name
+        )
 
-    if brand and brand not in nom:
-        return False
+    return brand in name
 
-    # Catégorie
-    category = _extract_category(query)
 
-    if category and not _matches_category(meta, category):
-        return False
+def _product_to_dict(product_id, metadata, document):
+    return {
+        "id": product_id,
+        "nom": metadata.get("nom"),
+        "prix": metadata.get("prix"),
+        "categorie": metadata.get("categorie"),
+        "description": document,
+    }
 
-    # Prix maximum
-    max_price = _extract_price_limit(query)
 
-    if max_price is not None and prix > max_price:
-        return False
+def _get_all_products(collection):
+    """
+    Récupère tous les produits actuellement indexés.
+    """
 
-    return True
+    data = collection.get(
+        include=["documents", "metadatas"]
+    )
+
+    ids = data.get("ids", [])
+    documents = data.get("documents", [])
+    metadatas = data.get("metadatas", [])
+
+    products = []
+
+    for product_id, document, metadata in zip(
+        ids,
+        documents,
+        metadatas,
+    ):
+        products.append(
+            _product_to_dict(
+                product_id,
+                metadata,
+                document,
+            )
+        )
+
+    return products
 
 
 def search_products(query: str, n_results: int = 3) -> list:
     """
-    Recherche les produits correspondant à la demande.
+    Recherche des produits selon la demande utilisateur.
 
-    Si la demande contient des filtres explicites
-    (marque, catégorie, prix), ils sont appliqués strictement.
+    Exemples :
 
-    Sinon, ChromaDB utilise la recherche sémantique.
+    "Je veux voir les PC"
+        -> tous les ordinateurs portables
+
+    "Je cherche un Dell"
+        -> produits Dell
+
+    "Je veux un PC à moins de 700 €"
+        -> laptops <= 700 €
+
+    "Je veux un MacBook"
+        -> MacBook
+
+    "Avez-vous un smartphone ?"
+        -> smartphones
+
+    Si aucun filtre explicite n'est détecté,
+    une recherche sémantique ChromaDB est utilisée.
     """
 
     collection = get_collection()
-    count = collection.count()
 
-    if count == 0:
+    if collection.count() == 0:
         return []
 
+    price_limit = _extract_price_limit(query)
     brand = _extract_brand(query)
     category = _extract_category(query)
-    max_price = _extract_price_limit(query)
-
-    has_explicit_filter = (
-        brand is not None
-        or category is not None
-        or max_price is not None
-    )
 
     # ---------------------------------------------------------
     # CAS 1 : recherche avec filtre explicite
     # ---------------------------------------------------------
 
-    if has_explicit_filter:
+    if price_limit is not None or brand is not None or category is not None:
 
-        results = collection.get(
-            include=["documents", "metadatas"]
+        all_products = _get_all_products(collection)
+
+        filtered_products = []
+
+        for product in all_products:
+
+            # Filtre catégorie
+            if category is not None:
+                if not _matches_category(product, category):
+                    continue
+
+            # Filtre marque
+            if brand is not None:
+                if not _matches_brand(product, brand):
+                    continue
+
+            # Filtre prix
+            if price_limit is not None:
+                try:
+                    product_price = float(product.get("prix", 0))
+                except (TypeError, ValueError):
+                    continue
+
+                if product_price > price_limit:
+                    continue
+
+            filtered_products.append(product)
+
+        # Tri par prix croissant
+        filtered_products.sort(
+            key=lambda p: float(p.get("prix", 0))
         )
 
-        docs = results.get("documents", [])
-        metas = results.get("metadatas", [])
-
-        products = []
-
-        for doc, meta in zip(docs, metas):
-
-            if not _matches_filters(meta, query):
-                continue
-
-            products.append({
-                "nom": meta.get("nom"),
-                "prix": meta.get("prix"),
-                "categorie": meta.get("categorie"),
-                "description": doc,
-            })
-
-            if len(products) >= n_results:
-                break
-
-        return products
+        return filtered_products
 
     # ---------------------------------------------------------
-    # CAS 2 : recherche sémantique classique
+    # CAS 2 : recherche sémantique
     # ---------------------------------------------------------
 
     results = collection.query(
         query_texts=[query],
-        n_results=min(n_results, count),
+        n_results=min(n_results, collection.count()),
     )
-
-    docs = results.get("documents", [[]])[0]
-    metas = results.get("metadatas", [[]])[0]
 
     products = []
 
-    for doc, meta in zip(docs, metas):
-        products.append({
-            "nom": meta.get("nom"),
-            "prix": meta.get("prix"),
-            "categorie": meta.get("categorie"),
-            "description": doc,
-        })
+    ids = results.get("ids", [[]])[0]
+    docs = results.get("documents", [[]])[0]
+    metas = results.get("metadatas", [[]])[0]
+
+    for product_id, doc, meta in zip(
+        ids,
+        docs,
+        metas,
+    ):
+        products.append(
+            _product_to_dict(
+                product_id,
+                meta,
+                doc,
+            )
+        )
 
     return products
-```
